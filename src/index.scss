@@ -1,0 +1,52 @@
+$primary: #2a9d8f;
+$secondary: #e9c46a;
+$accent: #f4a261;
+$muted: #264653;
+$highlight: #e76f51;
+
+body {
+   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-family: impact;
+  background: $muted;
+  color: $accent;
+  margin: 0;
+  padding: 0;
+}
+
+.section-one {
+  background: $primary;
+  padding: 2rem;
+
+  h1 {
+    color: $highlight;
+  }
+
+  button {
+    background: $secondary;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+
+    &:hover {
+      background: $accent;
+    }
+  }
+}
+
+.section-two {
+  background: $secondary;
+  padding: 2rem;
+
+  a {
+    color: $muted;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+      color: $highlight;
+    }
+  }
+}

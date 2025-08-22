@@ -11,6 +11,8 @@ import {
  PutCommand,
 
 } from "@aws-sdk/lib-dynamodb";
+import "./App.scss";
+import "./index.scss";
 
 
 
