@@ -1,12 +1,27 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Week 5 – Todo List Project Summary
 
-Currently, two official plugins are available:
+## Overview
+In Week 5, I continued developing the Todo List project with React, Vite, DynamoDB, and Material UI.  
+The main focus was extending the project beyond creating and scanning todos — I implemented update and delete features, learned to clean up the UI with reusable components, and worked with new libraries.  
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Key Learnings
 
-## Expanding the ESLint configuration
+### 1. DynamoDB Integration
+- Learned how to use `UpdateCommand` and `DeleteCommand` from `@aws-sdk/lib-dynamodb`.  
+- Built helper functions in `dynamo.js`:  
+  - `updateTodo(id, updates)` → modifies fields (e.g., toggle completed).  
+  - `deleteTodo(id)` → removes a todo item completely.  
+- Practiced writing `UpdateExpression`, `ExpressionAttributeNames`, and `ExpressionAttributeValues`.  
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. React State Updates
+- Connected DynamoDB actions to local React state so the UI updates instantly.  
+- Used `setTodos()` with mapping and filtering to reflect changes without reloading.  
+- Learned about optimistic UI updates (update UI immediately after action).  
+
+### 3. UI with Material UI and React Icons
+- Installed and imported components correctly:  
+  ```js
+  import { Button, TextField, Checkbox, List } from "@mui/material";
+  import { IoTrashOutline } from "react-icons/io5";
+  import { HiOutlinePencilSquare } from "react-icons/hi2";

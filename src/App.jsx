@@ -1,167 +1,107 @@
 import { useState, useEffect } from "react";
-
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-
 import {
-
- DynamoDBDocumentClient,
-
- ScanCommand,
-
- PutCommand,
-
-} from "@aws-sdk/lib-dynamodb";
-import "./App.scss";
-import "./index.scss";
-
-
-
-const client = new DynamoDBClient({
-
- region: import.meta.env.VITE_AWS_REGION,
-
- credentials: {
-
- accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-
- secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
-
- },
-
-});
-
-
-
-const docClient = DynamoDBDocumentClient.from(client);
-
-
-
-const TABLE_NAME = "Todo";
-
-
-
+  scanTodos,
+  createTodo,
+  deleteTodoById,
+  updateTodo,
+} from "./utils/dynamo";
+import List from "@mui/material/List";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Stack from "@mui/material/Stack";
+import TodoListItem from "./components/TodoListItem";
+import TodoEditor from "./components/TodoEditor";
 function App() {
-
- const [todos, setTodos] = useState([]); // the array where scanCommand will save the information
-
- const [text, setText] = useState(""); // string that is representing the text that you want to save in the table
-
-
-
- const scanTodos = async () => {
-
- try {
-
- const command = new ScanCommand({ TableName: TABLE_NAME });
-
- const response = await docClient.send(command);
-
- console.log(response);
-
- setTodos(response.Items);
-
- } catch (err) {
-
- console.log(err.message);
-
- }
-
- };
-
-
-
- const createTodo = async () => {
-
- const item = {
-
- id: Date.now().toString(),
-
- Text: text,
-
- IsComplete: false,
-
- };
-
-
-
- const command = new PutCommand({ TableName: "Todo", Item: item });
-
- const response = await docClient.send(command);
-
-
-
- setTodos([...todos, item ])
-
- console.log(response);
-
- };
-
-
-
- // The useEffect hook is called every time the component is showed to the user
-
- // onload event on html
-
- useEffect(() => {
-
- scanTodos();
-
- }, []);
-
-
-
- const changeHandlerText = (event) => {
-
- const data = event.target.value;
-
- setText(data);
-
- };
-
-
-
- return (
-
- <>
-
- <div style={{ padding: 20 }}>
-
- <h1>Todo App</h1>
-
- <input
-
- value={text}
-
- onChange={changeHandlerText}
-
- style={{ marginRight: 8 }}
-
- />
-
-
-
- <button onClick={createTodo}>Send Data</button>
-
-
-
- <ul style={{ marginTop: 16 }}>
-
- {todos.map((t) => (
-
- <li key={t.id}>{t.Text}</li>
-
- ))}
-
- </ul>
-
- </div>
-
- </>
-
- );
-
+  const [todos, setTodos] = useState([]); // the array where scanCommand will save the information
+  const [text, setText] = useState(""); // string that is representing the text that you want to save in the table
+  const [todoToEdit, setTodoToEdit] = useState({});
+
+  // The useEffect hook is called every time the component is showed to the user
+  useEffect(() => {
+    async function getTodos() {
+      const scanned = await scanTodos();
+      setTodos(scanned);
+    }
+
+    getTodos();
+  }, []);
+
+  const changeHandlerText = (event) => {
+    const data = event.target.value;
+    setText(data);
+  };
+
+  const handleCreateTodo = async () => {
+    const createdTodo = await createTodo(text);
+
+    setTodos([...todos, createdTodo]);
+    setText("");
+  };
+
+  const handleDeleteTodo = async (id) => {
+    await deleteTodoById(id);
+
+    const filteredTodos = todos.filter((todo) => {
+      return todo.id != id;
+    });
+
+    setTodos(filteredTodos);
+  };
+
+  const handleUpdateTodo = async () => {
+    await updateTodo(todoToEdit);
+
+    setTodos((previousTodos) => {
+      return previousTodos.map((todo) => {
+        return todo.id === todoToEdit.id ? todoToEdit : todo;
+      });
+    });
+    setTodoToEdit({});
+  };
+
+  return (
+    <>
+      <div className="todo-div">
+        <h1>Todo App</h1>
+
+        <Stack spacing={2} direction="row">
+          <TextField
+            value={text}
+            // defaultValue={text}
+            onChange={changeHandlerText}
+            id="outlined-basic"
+            label="What todo?"
+            variant="outlined"
+          />
+
+          <Button variant="contained" onClick={() => handleCreateTodo()}>
+            Create Todo
+          </Button>
+        </Stack>
+
+        <List dense sx={{ width: "100%" }}>
+          {todos.map((todoElem) =>
+            todoToEdit?.id === todoElem.id ? (
+              <TodoEditor
+                key={todoToEdit.id + "edit"}
+                todoElem={todoElem}
+                todoToEdit={todoToEdit}
+                setTodoToEdit={setTodoToEdit}
+                handleUpdateTodo={handleUpdateTodo}
+              />
+            ) : (
+              <TodoListItem
+                key={todoElem.id}
+                todoElem={todoElem}
+                setTodoToEdit={setTodoToEdit}
+                handleDeleteTodo={handleDeleteTodo}
+              />
+            )
+          )}
+        </List>
+      </div>
+    </>
+  );
 }
 
-
-
-export default App
+export default App;
