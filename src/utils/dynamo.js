@@ -1,87 +1,153 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+
 import {
-  DynamoDBDocumentClient,
-  ScanCommand,
-  PutCommand,
-  DeleteCommand,
-  UpdateCommand,
+
+ DynamoDBDocumentClient,
+
+ ScanCommand,
+
+ PutCommand,
+
+ GetCommand,
+
+ UpdateCommand,
+
+ DeleteCommand,
+
 } from "@aws-sdk/lib-dynamodb";
 
+
+
 const client = new DynamoDBClient({
-  region: import.meta.env.VITE_AWS_REGION,
-  credentials: {
-    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
-  },
+
+ region: import.meta.env.VITE_AWS_REGION,
+
+ credentials: {
+
+ accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+
+ secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
+
+ },
+
 });
+
+
 
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = "Todo";
 
-export const scanTodos = async () => {
-  try {
-    const command = new ScanCommand({ TableName: TABLE_NAME });
-    const response = await docClient.send(command);
-    console.log(response);
 
-    return response.Items;
-  } catch (err) {
-    console.log(err.message);
-  }
+export const listAllItems = async (tableName) => {
+
+ try {
+
+ const res = await docClient.send(new ScanCommand({ TableName: tableName }));
+
+ return res.Items || [];
+
+ } catch (err) {
+
+ return [];
+
+ }
+
 };
 
-export const createTodo = async (text) => {
-  const item = {
-    id: Date.now().toString(),
-    TodoText: text,
-    IsComplete: false,
-  };
 
-  const command = new PutCommand({ TableName: TABLE_NAME, Item: item });
-  const response = await docClient.send(command);
 
-  console.log(response);
-  return item;
-  // setTodos([...todos, item]);
+export const createItem = async (tableName, item) => {
+
+ await docClient.send(new PutCommand({ TableName: tableName, Item: item }));
+
+ return item;
+
 };
 
-export const deleteTodoById = async (id) => {
-  const command = new DeleteCommand({
-    TableName: TABLE_NAME,
-    Key: {
-      id: id,
-    },
-  });
 
-  const response = await docClient.send(command);
-  console.log(response);
-  return response;
+
+export const getItem = async (tableName, key) => {
+
+ const res = await docClient.send(
+
+ new GetCommand({ TableName: tableName, Key: key })
+
+ );
+
+ return res.Item ?? null;
+
 };
 
-export const updateTodo = async (todo) => {
-  const { id, TodoText, IsComplete } = todo;
 
-  const command = new UpdateCommand({
-    TableName: TABLE_NAME,
-    Key: { id },
-    UpdateExpression: "SET #TodoText = :TodoText, #IsComplete = :IsComplete",
 
-    // Best practice to use place holders
-    ExpressionAttributeNames: {
-      "#TodoText": "TodoText",
-      "#IsComplete": "IsComplete",
-    },
+export const updateItem = async (tableName, key, changes) => {
 
-    ExpressionAttributeValues: {
-      ":TodoText": TodoText,
-      ":IsComplete": IsComplete,
-    },
+ const names = {};
 
-    // ReturnValues: "ALL_NEW",
-  });
+ const values = {};
 
-  const { Attributes } = await docClient.send(command);
-  console.log(Attributes);
-  return Attributes;
+ const sets = [];
+
+ let i = 0;
+
+ for (const [k, v] of Object.entries(changes)) {
+
+ const n = `#n${i}`,
+
+ val = `:v${i}`;
+
+ names[n] = k;
+
+ values[val] = v;
+
+ sets.push(`${n} = ${val}`);
+
+ i++;
+
+ }
+
+ const res = await docClient.send(
+
+ new UpdateCommand({
+
+ TableName: tableName,
+
+ Key: key,
+
+ UpdateExpression: `SET ${sets.join(", ")}`,
+
+ ExpressionAttributeNames: names,
+
+ ExpressionAttributeValues: values,
+
+ ReturnValues: "ALL_NEW",
+
+ })
+
+ );
+
+ return res.Attributes ?? null;
+
+};
+
+
+
+export const deleteItem = async (tableName, key) => {
+
+ const res = await docClient.send(
+
+ new DeleteCommand({
+
+ TableName: tableName,
+
+ Key: key,
+
+ ReturnValues: "ALL_OLD",
+
+ })
+
+ );
+
+ return res.Attributes ?? null;
+
 };
